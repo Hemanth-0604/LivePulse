@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"os"
+	"strings"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -11,9 +14,15 @@ import (
 func Setup() *gin.Engine {
 	r := gin.Default()
 
+	origins := []string{"http://localhost:5173"}
+	if extra := os.Getenv("ALLOWED_ORIGINS"); extra != "" {
+		for _, o := range strings.Split(extra, ",") {
+			origins = append(origins, strings.TrimSpace(o))
+		}
+	}
+
 	r.Use(cors.New(cors.Config{
-		// Add your deployed frontend URL here once you have it.
-		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowOrigins:     origins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
