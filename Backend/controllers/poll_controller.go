@@ -31,7 +31,7 @@ func genCode() string {
 type createPollReq struct {
 	Question    string   `json:"question" binding:"required,min=3,max=200"`
 	Options     []string `json:"options" binding:"required,min=2,max=5,dive,required,min=1,max=80"`
-	DurationSec int      `json:"durationSec" binding:"required,min=10,max=600"`
+	DurationSec int      `json:"durationSec" binding:"required,min=10,max=14400"`
 }
 
 // CreatePoll is JWT-gated: only a logged-in creator can start a poll.
