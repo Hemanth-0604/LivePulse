@@ -4,12 +4,42 @@
   --stage:#0F0D18; --panel:#191628; --edge:#2A2740;
   --ink:#EDEBF5; --mute:#8F8AA8;
   --live:#FF3B5C; --run:#7B5CFF; --lead:#35E0C1; --warn:#FFB020;
-  background:var(--stage); color:var(--ink); min-height:100vh;
+  background:
+    radial-gradient(ellipse 800px 500px at 50% -10%, rgba(123,92,255,0.14), transparent 60%),
+    radial-gradient(ellipse 600px 400px at 90% 90%, rgba(53,224,193,0.06), transparent 60%),
+    var(--stage);
+  color:var(--ink); min-height:100vh;
   font-family:'Inter',system-ui,sans-serif;
-  display:flex; justify-content:center;
+  display:flex; justify-content:center; align-items:center;
   padding:32px 20px 48px;
 }
-.lp-card { width:100%; max-width:620px; }
+.lp-card { width:100%; max-width:640px; }
+
+/* Light theme — same variable names, different values. Everything below
+   already reads these vars, so no component CSS needs duplicating. */
+:root[data-theme="light"] .lp-root {
+  --stage:#F5F4FA; --panel:#FFFFFF; --edge:#E2E0EE;
+  --ink:#1B1830; --mute:#65607F;
+  --live:#E0234E; --run:#6A4CE0; --lead:#0FA98A; --warn:#B8790A;
+  background:
+    radial-gradient(ellipse 800px 500px at 50% -10%, rgba(106,76,224,0.08), transparent 60%),
+    radial-gradient(ellipse 600px 400px at 90% 90%, rgba(15,169,138,0.05), transparent 60%),
+    var(--stage);
+}
+:root[data-theme="light"] .lp-opt,
+:root[data-theme="light"] .lp-result {
+  box-shadow: 0 1px 3px rgba(27,24,48,0.06);
+}
+
+.lp-theme-toggle {
+  position: fixed; top: 16px; right: 16px; z-index: 50;
+  width: 40px; height: 40px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--edge);
+  color: var(--ink); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s ease, border-color .2s ease;
+}
+.lp-theme-toggle:hover { border-color: var(--run); }
 
 .lp-timerail { height:3px; background:var(--edge); border-radius:2px; overflow:hidden; }
 .lp-timerail i {
@@ -32,8 +62,8 @@
 .lp-ws.closed { color:var(--live); }
 
 .lp-q { font-family:'Barlow Condensed',sans-serif; font-weight:600;
-  font-size:40px; line-height:1.08; letter-spacing:-.005em; margin:0 0 6px; }
-.lp-sub { color:var(--mute); font-size:13.5px; margin:0 0 26px; }
+  font-size:40px; line-height:1.08; letter-spacing:-.005em; margin:0 0 8px; }
+.lp-sub { color:var(--mute); font-size:13.5px; margin:0 0 30px; }
 .lp-err { color:var(--live); font-size:13px; margin:0 0 14px; }
 
 .lp-opt { width:100%; text-align:left; background:var(--panel);
@@ -50,7 +80,7 @@
 
 .lp-row { position:relative; display:flex; align-items:center; gap:14px;
   padding:15px 16px; }
-.lp-label { font-size:15px; font-weight:500; }
+.lp-label { font-size:15px; font-weight:500; letter-spacing:.005em; }
 .lp-you { font-size:10.5px; color:var(--stage); background:var(--ink);
   border-radius:3px; padding:2px 5px; margin-left:8px; font-weight:600; vertical-align:2px; }
 .lp-nums { margin-left:auto; display:flex; align-items:baseline; gap:10px;
