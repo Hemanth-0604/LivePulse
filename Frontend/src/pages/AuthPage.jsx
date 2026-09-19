@@ -2,14 +2,17 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { saveToken } from "../lib/auth";
+import { getRecentEmails, rememberEmail } from "../lib/recentEmails";
 
 export default function AuthPage() {
   const [mode, setMode] = useState("login"); // "login" | "signup"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const recentEmails = getRecentEmails();
 
   const submit = async (e) => {
     e.preventDefault();
@@ -19,6 +22,7 @@ export default function AuthPage() {
       const data =
         mode === "login" ? await api.login(email, password) : await api.signup(email, password);
       saveToken(data.token);
+      rememberEmail(email);
       navigate("/create");
     } catch (err) {
       setError(err.message);
@@ -30,8 +34,10 @@ export default function AuthPage() {
   return (
     <div className="lp-root">
       <div className="lp-card">
-        <p className="lp-brand">LIVEPULSE</p>
-        <h1 className="lp-q">{mode === "login" ? "Log in" : "Create an account"}</h1>
+        <p className="lp-badge">LIVEPULSE</p>
+        <h1 className="lp-q" style={{ marginTop: 14 }}>
+          {mode === "login" ? "Log in" : "Create an account"}
+        </h1>
         <p className="lp-sub">
           {mode === "login" ? "Log in to host a poll." : "Sign up to start hosting polls."}
         </p>
@@ -42,21 +48,53 @@ export default function AuthPage() {
             className="lp-input"
             style={{ textTransform: "none" }}
             type="email"
+            list="lp-recent-emails"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete="email"
           />
-          <input
-            className="lp-input"
-            style={{ textTransform: "none" }}
-            type="password"
-            placeholder="password (min 6 chars)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={6}
-            required
-          />
+          {recentEmails.length > 0 && (
+            <datalist id="lp-recent-emails">
+              {recentEmails.map((e) => (
+                <option key={e} value={e} />
+              ))}
+            </datalist>
+          )}
+
+          <div style={{ position: "relative" }}>
+            <input
+              className="lp-input"
+              style={{ textTransform: "none", paddingRight: 60, width: "100%" }}
+              type={showPassword ? "text" : "password"}
+              placeholder="password (min 6 chars)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              required
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              style={{
+                position: "absolute",
+                right: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                color: "var(--mute)",
+                fontSize: 12,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+              tabIndex={-1}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
           <button className="lp-btn" type="submit" disabled={busy} style={{ padding: "13px 0" }}>
             {busy ? "…" : mode === "login" ? "Log in" : "Sign up"}
           </button>
