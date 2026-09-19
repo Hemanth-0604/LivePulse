@@ -144,12 +144,11 @@ Opens on `http://localhost:5173` by default, talking to the backend at whatever 
 - **CORS is origin-allowlist based** (`ALLOWED_ORIGINS`), not wildcarded — deliberate tradeoff of a bit of deploy-config friction (see the note above about preview URLs) for not leaving the API open to arbitrary origins.
 - **Theme is a single source of truth, not per-page CSS.** All color values are CSS variables declared once (`:root` / `:root[data-theme="light"]`), read by every page and component — avoids the class of bug where one page's palette silently diverges from another's after an edit.
 
-## Not yet shipped
-
-- Email verification on signup (planned: unverified account created at signup, verification link emailed via SMTP, login blocked until verified).
-
 ## AI tools used
 
-*(Fill this in honestly for your submission video and this section — which
-tools you used, and specifically how they helped or got in the way. Being
-specific is part of what's being evaluated, not just naming a tool.)*
+Used Claude for the bulk of the coding and for debugging — building and
+fixing the Go backend (Redis logic, auth, validation), the React frontend,
+and working through issues like the theme system and vote-switching race
+conditions. Used ChatGPT in a smaller, supporting role: navigating the file
+structure and directory pathways, and getting a cleaner design pass on the
+light/dark mode UI.
