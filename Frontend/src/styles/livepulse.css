@@ -1,12 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
 
+/* ---- Theme variables: declared ONCE here, every page/component just
+   reads them. Never redeclare these inside a page wrapper class again —
+   that's what caused the last bug (vars silently missing on .lp-page). */
+:root {
+  --stage:#0F0D18; --panel:#211D38; --edge:#362F52;
+  --ink:#EDEBF5; --mute:#9A94B5;
+  --live:#FF3B5C; --run:#8B6CFF; --lead:#35E0C1; --warn:#FFB020;
+  --wave: rgba(139,108,255,0.12);
+}
+:root[data-theme="light"] {
+  --stage:#F5F4FA; --panel:#FFFFFF; --edge:#E2E0EE;
+  --ink:#1B1830; --mute:#65607F;
+  --live:#E0234E; --run:#6A4CE0; --lead:#0FA98A; --warn:#B8790A;
+  --wave: rgba(106,76,224,0.07);
+}
+
+/* ---- Page wrappers ---- */
 .lp-root {
-  --stage:#0F0D18; --panel:#191628; --edge:#2A2740;
-  --ink:#EDEBF5; --mute:#8F8AA8;
-  --live:#FF3B5C; --run:#7B5CFF; --lead:#35E0C1; --warn:#FFB020;
-  --wave: rgba(123,92,255,0.10);
   background:
-    radial-gradient(ellipse 800px 500px at 50% -10%, rgba(123,92,255,0.14), transparent 60%),
+    radial-gradient(ellipse 800px 500px at 50% -10%, rgba(139,108,255,0.14), transparent 60%),
     radial-gradient(ellipse 600px 400px at 90% 90%, rgba(53,224,193,0.06), transparent 60%),
     var(--stage);
   color:var(--ink); min-height:100vh;
@@ -16,10 +29,10 @@
 }
 .lp-card { width:100%; max-width:640px; }
 
-/* Full page shell used by pages with header + hero content (JoinPage) */
 .lp-page {
-  min-height:100vh; background:
-    radial-gradient(ellipse 800px 500px at 50% -10%, rgba(123,92,255,0.14), transparent 60%),
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse 800px 500px at 50% -10%, rgba(139,108,255,0.14), transparent 60%),
     radial-gradient(ellipse 600px 400px at 90% 90%, rgba(53,224,193,0.06), transparent 60%),
     var(--stage);
   color:var(--ink); font-family:'Inter',system-ui,sans-serif;
@@ -31,21 +44,14 @@
 }
 .lp-hero-q { font-family:'Barlow Condensed',sans-serif; font-weight:700;
   font-size:52px; line-height:1.05; margin:18px 0 10px; }
-.lp-accent-text {
-  background: linear-gradient(90deg, var(--run), var(--lead));
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-}
+.lp-accent-text { color: var(--run); }
 .lp-badge {
   display:inline-block; padding:6px 16px; border-radius:999px;
-  background:rgba(123,92,255,0.12); border:1px solid rgba(123,92,255,0.35);
+  background:rgba(139,108,255,0.14); border:1px solid rgba(139,108,255,0.4);
   color:var(--run); font-size:11.5px; font-weight:700; letter-spacing:.1em;
 }
-.lp-features {
-  display:flex; gap:36px; justify-content:center; margin-top:56px; flex-wrap:wrap;
-}
-.lp-feature {
-  display:flex; align-items:center; gap:9px; color:var(--mute); font-size:13px; font-weight:500;
-}
+.lp-features { display:flex; gap:36px; justify-content:center; margin-top:56px; flex-wrap:wrap; }
+.lp-feature { display:flex; align-items:center; gap:9px; color:var(--mute); font-size:13px; font-weight:500; }
 .lp-feature svg { width:19px; height:19px; color:var(--run); flex-shrink:0; }
 
 .lp-wave { position:absolute; left:0; right:0; bottom:0; height:180px; z-index:0; line-height:0; }
@@ -54,39 +60,45 @@
 .lp-float {
   position:absolute; top:42%; width:56px; height:56px; border-radius:16px;
   background:var(--panel); border:1px solid var(--edge); color:var(--run);
-  display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,0.15);
+  display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,0.18);
 }
 .lp-float svg { width:24px; height:24px; }
 .lp-float-left { left:8%; transform:rotate(-8deg); }
 .lp-float-right { right:8%; top:38%; transform:rotate(8deg); color:var(--lead); }
 @media (max-width:900px) { .lp-float { display:none; } }
 
-/* Light theme — same variable names, different values. Everything below
-   already reads these vars, so no component CSS needs duplicating. */
-:root[data-theme="light"] .lp-root {
-  --stage:#F5F4FA; --panel:#FFFFFF; --edge:#E2E0EE;
-  --ink:#1B1830; --mute:#65607F;
-  --live:#E0234E; --run:#6A4CE0; --lead:#0FA98A; --warn:#B8790A;
-  background:
-    radial-gradient(ellipse 800px 500px at 50% -10%, rgba(106,76,224,0.08), transparent 60%),
-    radial-gradient(ellipse 600px 400px at 90% 90%, rgba(15,169,138,0.05), transparent 60%),
-    var(--stage);
-}
 :root[data-theme="light"] .lp-opt,
-:root[data-theme="light"] .lp-result {
-  box-shadow: 0 1px 3px rgba(27,24,48,0.06);
+:root[data-theme="light"] .lp-result,
+:root[data-theme="light"] .lp-float {
+  box-shadow: 0 1px 4px rgba(27,24,48,0.08);
 }
 
-.lp-theme-toggle {
-  position: fixed; top: 16px; right: 16px; z-index: 50;
-  width: 40px; height: 40px; border-radius: 999px;
-  background: var(--panel); border: 1px solid var(--edge);
-  color: var(--ink); font-size: 18px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .2s ease, border-color .2s ease;
+/* ---- Header ---- */
+.lp-header {
+  position:fixed; top:0; left:0; right:0; z-index:60;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 28px; background:transparent;
 }
-.lp-theme-toggle:hover { border-color: var(--run); }
+.lp-logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink); }
+.lp-logo-mark {
+  width:34px; height:34px; border-radius:9px;
+  background:linear-gradient(135deg, var(--run), var(--lead));
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.lp-logo-mark svg { width:18px; height:18px; }
+.lp-logo-word { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:19px; letter-spacing:.01em; }
 
+.lp-theme-switch {
+  display:flex; align-items:center; gap:2px; background:var(--panel);
+  border:1px solid var(--edge); border-radius:999px; padding:4px; cursor:pointer;
+}
+.lp-ts-icon {
+  width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:13px; color:var(--mute); transition:background .2s ease, color .2s ease;
+}
+.lp-ts-icon.active { background:var(--run); color:#fff; }
+
+/* ---- Poll page ---- */
 .lp-timerail { height:3px; background:var(--edge); border-radius:2px; overflow:hidden; }
 .lp-timerail i {
   display:block; height:100%; background:var(--live);
@@ -124,8 +136,7 @@
 .lp-opt.mine { border-color:var(--ink); }
 .lp-opt:not(:disabled):hover .fill { opacity:.38; }
 
-.lp-row { position:relative; display:flex; align-items:center; gap:14px;
-  padding:15px 16px; }
+.lp-row { position:relative; display:flex; align-items:center; gap:14px; padding:15px 16px; }
 .lp-label { font-size:15px; font-weight:500; letter-spacing:.005em; }
 .lp-you { font-size:10.5px; color:var(--stage); background:var(--ink);
   border-radius:3px; padding:2px 5px; margin-left:8px; font-weight:600; vertical-align:2px; }
@@ -156,7 +167,7 @@
 .lp-result h3 { margin:4px 0 0; font-family:'Barlow Condensed',sans-serif;
   font-size:26px; font-weight:600; color:var(--lead); }
 
-/* Join page */
+/* ---- Forms shared across Join / Auth / Create ---- */
 .lp-brand { font-family:'Barlow Condensed',sans-serif; font-size:15px;
   letter-spacing:.09em; font-weight:600; color:var(--run); margin:0 0 30px; }
 .lp-form { display:flex; gap:10px; margin-top:10px; }
@@ -165,38 +176,13 @@
   font-family:'Barlow Condensed',sans-serif; letter-spacing:.06em;
   text-transform:lowercase; }
 .lp-input:focus { outline:2px solid var(--run); outline-offset:1px; }
-.lp-btn { background:var(--run); color:var(--ink); border:none; border-radius:8px;
+.lp-btn { background:var(--run); color:#fff; border:none; border-radius:8px;
   padding:0 22px; font-size:14px; font-weight:600; cursor:pointer;
-  font-family:inherit; }
+  font-family:inherit; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
 .lp-btn:hover { opacity:.9; }
-:root[data-theme="light"] .lp-root,
-:root[data-theme="light"] .lp-page {
-  --wave: rgba(106,76,224,0.06);
-}
-
-.lp-header {
-  position:fixed; top:0; left:0; right:0; z-index:60;
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 28px; background:transparent;
-}
-.lp-logo { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink); }
-.lp-logo-mark {
-  width:34px; height:34px; border-radius:9px;
-  background:linear-gradient(135deg, var(--run), var(--lead));
-  display:flex; align-items:center; justify-content:center;
-}
-.lp-logo-mark svg { width:18px; height:18px; }
-.lp-logo-word { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:19px; letter-spacing:.01em; }
-
-.lp-theme-switch {
-  display:flex; align-items:center; gap:2px; background:var(--panel);
-  border:1px solid var(--edge); border-radius:999px; padding:4px; cursor:pointer;
-}
-.lp-ts-icon {
-  width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  font-size:13px; color:var(--mute); transition:background .2s ease, color .2s ease;
-}
-.lp-ts-icon.active { background:var(--run); color:#fff; }
+.lp-btn:disabled { opacity:.4; cursor:default; }
+.lp-linklike { background:none; border:none; color:var(--run); font:inherit;
+  cursor:pointer; padding:0; text-decoration:underline; }
 
 .lp-input-wrap { position:relative; flex:1; }
 .lp-input-icon {
@@ -205,16 +191,12 @@
 }
 .lp-input-has-icon { padding-left:34px !important; }
 
-.lp-btn:disabled { opacity:.4; cursor:default; }
-.lp-linklike { background:none; border:none; color:var(--run); font:inherit;
-  cursor:pointer; padding:0; text-decoration:underline; }
-
 @keyframes lp-pulse { 0%,100%{opacity:1} 50%{opacity:.25} }
 @keyframes lp-in { from{opacity:0; transform:translateY(-5px)} to{opacity:1; transform:none} }
 @media (prefers-reduced-motion: reduce) {
-  .lp-root * { animation:none !important; transition:none !important; }
+  .lp-root *, .lp-page * { animation:none !important; transition:none !important; }
 }
 @media (max-width:480px) {
-  .lp-q { font-size:30px; }
+  .lp-q, .lp-hero-q { font-size:30px; }
   .lp-pct { font-size:19px; }
 }

@@ -3,12 +3,12 @@ import JoinPage from "./pages/JoinPage";
 import AuthPage from "./pages/AuthPage";
 import CreatePollPage from "./pages/CreatePollPage";
 import PollPage from "./pages/PollPage";
-import ThemeToggle from "./components/ThemeToggle";
+import Header from "./components/Header";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeToggle />
+      <Header />
       <Routes>
         <Route path="/" element={<JoinPage />} />
         <Route path="/login" element={<AuthPage />} />

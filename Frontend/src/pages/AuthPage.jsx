@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { saveToken } from "../lib/auth";
@@ -11,6 +11,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const slowTimer = useRef(null);
   const navigate = useNavigate();
   const recentEmails = getRecentEmails();
 
@@ -18,6 +20,11 @@ export default function AuthPage() {
     e.preventDefault();
     setError(null);
     setBusy(true);
+    setSlow(false);
+    // The backend's free-tier host sleeps after idle time and can take up to
+    // ~50s to wake on the first request — this just sets expectations rather
+    // than leaving the button looking frozen.
+    slowTimer.current = setTimeout(() => setSlow(true), 3000);
     try {
       const data =
         mode === "login" ? await api.login(email, password) : await api.signup(email, password);
@@ -27,7 +34,9 @@ export default function AuthPage() {
     } catch (err) {
       setError(err.message);
     } finally {
+      clearTimeout(slowTimer.current);
       setBusy(false);
+      setSlow(false);
     }
   };
 
@@ -42,6 +51,11 @@ export default function AuthPage() {
           {mode === "login" ? "Log in to host a poll." : "Sign up to start hosting polls."}
         </p>
         {error && <p className="lp-err">{error}</p>}
+        {slow && !error && (
+          <p className="lp-sub" style={{ color: "var(--warn)", marginTop: -10, marginBottom: 14 }}>
+            Waking up the server — this can take up to 50s on the free tier.
+          </p>
+        )}
 
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <input
