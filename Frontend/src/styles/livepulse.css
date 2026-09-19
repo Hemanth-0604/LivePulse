@@ -195,9 +195,10 @@
    the custom Show/Hide toggle button. */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear { display:none; }
-input::-webkit-credentials-auto-fill-button,
-input::-webkit-contacts-auto-fill-button,
-input::-webkit-caps-lock-indicator {
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-strong-password-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button,
+input[type="password"]::-webkit-caps-lock-indicator {
   visibility:hidden; display:none !important; pointer-events:none;
   position:absolute; right:0;
 }

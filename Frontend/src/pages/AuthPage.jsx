@@ -21,9 +21,6 @@ export default function AuthPage() {
     setError(null);
     setBusy(true);
     setSlow(false);
-    // The backend's free-tier host sleeps after idle time and can take up to
-    // ~50s to wake on the first request — this just sets expectations rather
-    // than leaving the button looking frozen.
     slowTimer.current = setTimeout(() => setSlow(true), 3000);
     try {
       const data =
