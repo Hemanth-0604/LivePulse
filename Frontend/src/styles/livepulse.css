@@ -43,7 +43,7 @@
   text-align:center; padding:110px 24px 140px; position:relative; z-index:1;
 }
 .lp-hero-q { font-family:'Barlow Condensed',sans-serif; font-weight:700;
-  font-size:52px; line-height:1.05; margin:18px 0 10px; }
+  font-size:52px; line-height:1.05; margin:18px 0 10px; color:var(--ink); }
 .lp-accent-text { color: var(--run); }
 .lp-badge {
   display:inline-block; padding:6px 16px; border-radius:999px;
@@ -120,7 +120,7 @@
 .lp-ws.closed { color:var(--live); }
 
 .lp-q { font-family:'Barlow Condensed',sans-serif; font-weight:600;
-  font-size:40px; line-height:1.08; letter-spacing:-.005em; margin:0 0 8px; }
+  font-size:40px; line-height:1.08; letter-spacing:-.005em; margin:0 0 8px; color:var(--ink); }
 .lp-sub { color:var(--mute); font-size:13.5px; margin:0 0 30px; }
 .lp-err { color:var(--live); font-size:13px; margin:0 0 14px; }
 
