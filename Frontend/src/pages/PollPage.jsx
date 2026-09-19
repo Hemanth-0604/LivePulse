@@ -84,19 +84,18 @@ export default function PollPage() {
 
   const status = secondsLeft > 0 ? "live" : "closed";
 
+  // Casting and switching a vote are the same call — the backend no-ops if
+  // you click the option you already picked, and atomically moves your count
+  // if you pick a different one. Voting stays open the whole time the poll
+  // is live; it's only locked once the poll actually closes.
   const castVote = async (optionId) => {
-    if (myVote || status !== "live") return;
+    if (status !== "live" || optionId === myVote) return;
     setVoteError(null);
     try {
       await api.vote(pollCode, optionId, name || "Anonymous");
       setMyVote(optionId);
     } catch (err) {
-      if (err.status === 409) {
-        setMyVote("already-voted");
-        setVoteError("You've already voted on this poll.");
-      } else {
-        setVoteError(err.message);
-      }
+      setVoteError(err.message);
     }
   };
 
@@ -155,13 +154,13 @@ export default function PollPage() {
         <p className="lp-sub">
           {status === "live"
             ? myVote
-              ? "Your vote is in. Results keep updating until the timer runs out."
-              : "Pick one. You can only vote once."
+              ? "Your vote is in — pick a different option any time before the timer ends."
+              : "Pick one. You can change your mind until the timer ends."
             : "Final results."}
         </p>
         {voteError && <p className="lp-err">{voteError}</p>}
 
-        {status === "live" && !myVote && (
+        {status === "live" && (
           <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             <input
               className="lp-input"
@@ -184,7 +183,7 @@ export default function PollPage() {
               key={o.id}
               className={`lp-opt ${isLead ? "lead" : ""} ${myVote === o.id ? "mine" : ""}`}
               onClick={() => castVote(o.id)}
-              disabled={!!myVote || status !== "live"}
+              disabled={status !== "live"}
               aria-pressed={myVote === o.id}
             >
               <span className="fill" style={{ width: `${pct(o.id)}%` }} />

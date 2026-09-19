@@ -132,6 +132,11 @@ func fingerprint(c *gin.Context) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// Vote both casts a first-time vote AND handles switching an existing vote to
+// a different option — both paths go through the same atomic SwitchVote
+// script, so "cast" is really just "switch from nothing." Voting is always
+// blocked once the poll's closesAt has passed, checked server-side here
+// regardless of what the frontend's countdown shows.
 func Vote(c *gin.Context) {
 	code := c.Param("code")
 	var req voteReq
@@ -166,37 +171,37 @@ func Vote(c *gin.Context) {
 
 	fp := fingerprint(c)
 	ttl := time.Until(poll.ClosesAt) + time.Hour
-	isNew, err := services.ClaimVote(ctx, code, fp, ttl)
+	result, err := services.SwitchVote(ctx, code, fp, req.OptionID, ttl)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "vote failed"})
 		return
 	}
-	if !isNew {
-		c.JSON(http.StatusConflict, gin.H{"error": "you already voted on this poll"})
-		return
-	}
-
-	if _, err := services.CastVote(ctx, code, req.OptionID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "vote failed"})
-		return
-	}
-
-	voterName := sanitizeVoterName(req.Voter)
 
 	counts, _ := services.GetTally(ctx, code)
-	services.PublishVote(ctx, code, counts, &services.LastVote{OptionID: req.OptionID, Voter: voterName})
 
-	// Best-effort async write to Mongo. Redis stays the source of truth while
-	// the poll is live; Mongo is kept in sync so results survive a restart.
-	go func(counts map[string]int64) {
-		bctx := context.Background()
-		for optID, n := range counts {
-			config.DB.Collection("polls").UpdateOne(bctx,
-				bson.M{"code": code, "options.id": optID},
-				bson.M{"$set": bson.M{"options.$.votes": n}},
-			)
-		}
-	}(counts)
+	// Only broadcast and persist when the vote actually moved — clicking the
+	// option you already picked is a no-op, not a fresh event.
+	if result.Changed {
+		voterName := sanitizeVoterName(req.Voter)
+		services.PublishVote(ctx, code, counts, &services.LastVote{OptionID: req.OptionID, Voter: voterName})
 
-	c.JSON(http.StatusOK, gin.H{"counts": counts})
+		// Best-effort async write to Mongo. Redis stays the source of truth
+		// while the poll is live; Mongo is kept in sync so results survive a
+		// restart.
+		go func(counts map[string]int64) {
+			bctx := context.Background()
+			for optID, n := range counts {
+				config.DB.Collection("polls").UpdateOne(bctx,
+					bson.M{"code": code, "options.id": optID},
+					bson.M{"$set": bson.M{"options.$.votes": n}},
+				)
+			}
+		}(counts)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"counts":   counts,
+		"yourVote": req.OptionID,
+		"changed":  result.Changed,
+	})
 }

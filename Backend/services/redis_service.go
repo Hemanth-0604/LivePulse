@@ -38,16 +38,66 @@ func InitPollVotes(ctx context.Context, code string, optionIDs []string) error {
 	return err
 }
 
-// ClaimVote atomically reserves a voter slot with SET NX EX.
-// Returns true only if this fingerprint had not voted before (a genuinely new vote).
-func ClaimVote(ctx context.Context, code, fingerprint string, ttl time.Duration) (bool, error) {
-	return config.RedisClient.SetNX(ctx, voterKey(code, fingerprint), 1, ttl).Result()
+// switchVoteScript atomically moves a fingerprint's vote to a new option.
+//
+//   - First-time vote (voter key doesn't exist yet): store the pick with a
+//     fresh TTL, increment that option, done.
+//   - Same option clicked again: no-op, so a double click can never double-count.
+//   - Different option than before: decrement the old pick's count, increment
+//     the new one, and overwrite the stored pick — keeping its existing TTL
+//     (KEEPTTL) rather than resetting the clock on every switch.
+//
+// All of this runs as one atomic unit in Redis, so two near-simultaneous
+// switch requests for the same voter can never interleave and desync the
+// hash from what's actually stored as their current pick.
+const switchVoteScript = `
+local prev = redis.call('GET', KEYS[1])
+if prev == ARGV[1] then
+  return {0, prev}
+end
+if prev then
+  redis.call('HINCRBY', KEYS[2], prev, -1)
+  redis.call('SET', KEYS[1], ARGV[1], 'KEEPTTL')
+else
+  redis.call('SETEX', KEYS[1], tonumber(ARGV[2]), ARGV[1])
+end
+redis.call('HINCRBY', KEYS[2], ARGV[1], 1)
+return {1, prev}
+`
+
+// SwitchResult reports whether the vote actually moved, and what the voter's
+// previous pick was (empty string if this was their first vote on the poll).
+type SwitchResult struct {
+	Changed  bool
+	Previous string
 }
 
-// CastVote atomically increments the option's counter — this is the operation
-// that makes concurrent votes safe without a read-modify-write race.
-func CastVote(ctx context.Context, code, optionID string) (int64, error) {
-	return config.RedisClient.HIncrBy(ctx, votesKey(code), optionID, 1).Result()
+// SwitchVote is the single entry point for casting OR changing a vote.
+// ttl only applies the first time a fingerprint votes on this poll; on a
+// later switch, the original expiry is preserved untouched.
+func SwitchVote(ctx context.Context, code, fingerprint, optionID string, ttl time.Duration) (SwitchResult, error) {
+	res, err := config.RedisClient.Eval(ctx, switchVoteScript,
+		[]string{voterKey(code, fingerprint), votesKey(code)},
+		optionID, int64(ttl.Seconds()),
+	).Result()
+	if err != nil {
+		return SwitchResult{}, err
+	}
+
+	arr, ok := res.([]interface{})
+	if !ok || len(arr) != 2 {
+		return SwitchResult{}, fmt.Errorf("unexpected switch-vote script result: %v", res)
+	}
+
+	changed := false
+	if n, ok := arr[0].(int64); ok {
+		changed = n == 1
+	}
+	prev := ""
+	if s, ok := arr[1].(string); ok {
+		prev = s
+	}
+	return SwitchResult{Changed: changed, Previous: prev}, nil
 }
 
 // GetTally reads the full current set of counts for a poll.
