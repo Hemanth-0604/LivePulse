@@ -32,6 +32,50 @@ docker-compose.yml  > local Mongo + Redis for development
 - **Realtime:** Redis pub/sub → WebSocket fan-out
 - **Auth:** JWT (bcrypt-hashed passwords) + optional "Sign in with Google"
 
+## Tech stack coverage (required layers)
+
+| Layer | Use | Where it lives |
+|---|---|---|
+| Frontend | React | `Frontend/src` |
+| Backend | Go (Gin) | `Backend` |
+| Database | MongoDB | `Backend/config/db.go`, `Backend/models` |
+| Realtime | Redis | `Backend/config/redis.go`, `Backend/services/redis_service.go` |
+
+**Frontend — React**
+- `App.jsx` — routes for `/` (Join), `/login` (Auth), `/create` (Create Poll), `/p/:code` (Poll/Results), via React Router
+- `pages/JoinPage.jsx`, `AuthPage.jsx`, `CreatePollPage.jsx`, `PollPage.jsx` — the four screens
+- `lib/api.js` — fetch wrapper calling the Go backend (`login`, `signup`, `googleLogin`, `createPoll`, etc.)
+- `lib/auth.js` — stores/reads the JWT in `localStorage`
+- `lib/socket.js` — opens the WebSocket connection to `/ws/polls/:code`
+- `lib/theme.js` — reads/writes the light/dark preference
+- `styles/livepulse.css` — styling, including the `:root[data-theme]` light/dark variable system
+- `components/Header.jsx`, `ThemeToggle.jsx`, `lib/voter.js`, `lib/recentEmails.js` — present in the project; contents not yet documented in detail here
+
+**Backend — Go (Gin)**
+- `main.go` — entrypoint, starts the Gin server
+- `routes/routes.go` — registers every endpoint, sets up CORS via `ALLOWED_ORIGINS`
+- `controllers/auth_controller.go` — `Signup`, `Login`, `GoogleLogin` handlers
+- `controllers/poll_controller.go` — `CreatePoll`, `GetPoll`, `Vote`, including duration validation and expiry checks
+- `controllers/ws_controller.go` — WebSocket upgrade handler and hub
+- `middleware/auth.go` — `JWTAuth()`, guards poll creation
+- `services/auth_service.go` — `HashPassword`/`CheckPassword` (bcrypt), `GenerateJWT`
+
+**Database — MongoDB**
+- `config/db.go` — Mongo client/connection setup
+- `models/poll.go` — Poll schema: question, options, `durationSec`, `closesAt`, share code, creator ID
+- `models/user.go` — User schema: email, `password_hash`, `google_id`, `created_at`
+- Both collections are read/written directly through the controllers above — `Signup` inserts into `users`; `CreatePoll` inserts into the polls collection; `Vote`/`GetPoll` read from it
+
+**Realtime — Redis**
+- `config/redis.go` — Redis client setup
+- `services/redis_service.go`:
+  - `HIncrBy` atomically increments the actual per-option vote count — this *is* the count, not a display-only mirror of a Mongo value
+  - Publishes to a `poll:{code}:stream` channel on every vote
+  - `SETNX`-based fingerprint claim (IP + user-agent hash, TTL'd to the poll's close time) for duplicate-vote prevention
+- `ws_controller.go` — each backend instance subscribes to that channel and fans results out over WebSocket to connected browsers
+
+Redis is load-bearing here, not decorative: disconnect it and live results stop updating — there is no polling fallback that fakes the realtime behavior.
+
 ## Running it locally
 
 ### Option A — Docker for Mongo/Redis, run the apps yourself
