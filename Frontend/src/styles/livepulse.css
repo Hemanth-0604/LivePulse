@@ -107,17 +107,17 @@
 .lp-timerail.warn i { background:var(--warn); }
 
 .lp-head { display:flex; align-items:center; gap:10px; margin:14px 0 22px; }
-.lp-dot { width:9px; height:9px; border-radius:50%; background:var(--live); animation:lp-pulse 1.6s ease-in-out infinite; }
+.lp-dot { width:9px; height:9px; border-radius:50%; background:var(--lead); animation:lp-pulse 1.6s ease-in-out infinite; }
 .lp-state { font-family:'Barlow Condensed',sans-serif; font-size:15px; letter-spacing:.09em;
-  font-weight:600; color:var(--live); }
+  font-weight:600; color:var(--lead); }
 .lp-closed .lp-dot { background:var(--mute); animation:none; }
 .lp-closed .lp-state { color:var(--mute); }
 .lp-clock { margin-left:auto; font-family:'Barlow Condensed',sans-serif;
   font-size:22px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--mute); }
 .lp-clock.warn { color:var(--warn); }
 .lp-ws { font-size:11px; color:var(--mute); margin-left:10px; }
-.lp-ws.open { color:var(--lead); }
-.lp-ws.closed { color:var(--live); }
+.lp-ws.open { color:var(--live); }
+.lp-ws.closed { color:var(--mute); }
 
 .lp-q { font-family:'Barlow Condensed',sans-serif; font-weight:600;
   font-size:40px; line-height:1.08; letter-spacing:-.005em; margin:0 0 8px; color:var(--ink); }
