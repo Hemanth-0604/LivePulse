@@ -43,19 +43,19 @@ docker-compose.yml  > local Mongo + Redis for development
 
 **Frontend — React**
 - `App.jsx` — routes for `/` (Join), `/login` (Auth), `/create` (Create Poll), `/p/:code` (Poll/Results), via React Router
-- `pages/JoinPage.jsx`, `AuthPage.jsx`, `CreatePollPage.jsx`, `PollPage.jsx` — the four screens
+- `pages/JoinPage.jsx`, `AuthPage.jsx`, `CreatePollPage.jsx`, `PollPage.jsx` — the four screens. `CreatePollPage.jsx` includes a custom poll-duration picker (preset minute buttons plus a free-entry custom option, capped to match the backend's validated range). `PollPage.jsx` lets a voter change their pick any time while the poll is live — clicking a different option re-submits and moves the "your vote" marker, rather than locking after the first click.
 - `lib/api.js` — fetch wrapper calling the Go backend (`login`, `signup`, `googleLogin`, `createPoll`, etc.)
 - `lib/auth.js` — stores/reads the JWT in `localStorage`
 - `lib/socket.js` — opens the WebSocket connection to `/ws/polls/:code`
-- `lib/theme.js` — reads/writes the light/dark preference
-- `styles/livepulse.css` — styling, including the `:root[data-theme]` light/dark variable system
+- `lib/theme.js` — reads/writes the light/dark preference, applied via a `data-theme` attribute on `<html>` and persisted to `localStorage`, initialized from system preference on first visit
+- `styles/livepulse.css` — all theme colors are declared once as CSS variables in `:root` / `:root[data-theme="light"]`, so every page and component reads the same source of truth instead of each page redeclaring its own palette
 - `components/Header.jsx`, `ThemeToggle.jsx`, `lib/voter.js`, `lib/recentEmails.js` — present in the project; contents not yet documented in detail here
 
 **Backend — Go (Gin)**
 - `main.go` — entrypoint, starts the Gin server
 - `routes/routes.go` — registers every endpoint, sets up CORS via `ALLOWED_ORIGINS`
 - `controllers/auth_controller.go` — `Signup`, `Login`, `GoogleLogin` handlers
-- `controllers/poll_controller.go` — `CreatePoll`, `GetPoll`, `Vote`, including duration validation and expiry checks
+- `controllers/poll_controller.go` — `CreatePoll`, `GetPoll`, `Vote`. Duration is validated server-side (bounded, not just whatever the frontend's preset buttons send), and `Vote` handles both a first-time vote and a voter switching their pick — both go through the same atomic path (see Realtime — Redis below). Expiry (`closesAt`) is checked independently on every vote and every poll fetch, regardless of what the frontend's countdown displays.
 - `controllers/ws_controller.go` — WebSocket upgrade handler and hub
 - `middleware/auth.go` — `JWTAuth()`, guards poll creation
 - `services/auth_service.go` — `HashPassword`/`CheckPassword` (bcrypt), `GenerateJWT`
@@ -70,8 +70,8 @@ docker-compose.yml  > local Mongo + Redis for development
 - `config/redis.go` — Redis client setup
 - `services/redis_service.go`:
   - `HIncrBy` atomically increments the actual per-option vote count — this *is* the count, not a display-only mirror of a Mongo value
-  - Publishes to a `poll:{code}:stream` channel on every vote
-  - `SETNX`-based fingerprint claim (IP + user-agent hash, TTL'd to the poll's close time) for duplicate-vote prevention
+  - Publishes to a `poll:{code}:stream` channel on every vote that actually changes the tally
+  - Duplicate/duplicate-switch voting is handled by a single atomic Redis Lua script (`EVAL`), keyed on a fingerprint (IP + user-agent hash, TTL'd to the poll's close time). A first vote claims the fingerprint and increments its pick; clicking the same option again is a no-op; picking a different option atomically decrements the old pick and increments the new one in one indivisible operation — so a voter can change their mind, but never ends up counted for two options, and two near-simultaneous switch requests from the same voter can't interleave and desync the tally
 - `ws_controller.go` — each backend instance subscribes to that channel and fans results out over WebSocket to connected browsers
 
 Redis is load-bearing here, not decorative: disconnect it and live results stop updating — there is no polling fallback that fakes the realtime behavior.
@@ -137,8 +137,19 @@ Opens on `http://localhost:5173` by default, talking to the backend at whatever 
 
 ## Key decisions
 
-- **Poll expiry is enforced server-side**, not just in the UI. The Go backend checks `closesAt` against the current time on every vote and on poll fetch, so a bypassed frontend timer can't extend voting past the real deadline.
+- **Poll expiry is enforced server-side**, not just in the UI. The Go backend checks `closesAt` against the current time on every vote and on poll fetch, so a bypassed frontend timer can't extend voting past the real deadline. The same applies to custom poll durations — the value is validated and bounded server-side, not trusted as-is from whatever the frontend's duration picker sends.
 - **Realtime uses Redis pub/sub, not client-side polling.** A vote handled by any backend instance publishes to a `poll:{code}:stream` channel; every instance's WebSocket hub subscribes and fans out to its own connected clients. This is what lets the backend scale to multiple instances without clients missing updates.
-- **Duplicate-vote protection uses a Redis `SETNX` fingerprint claim** (IP + user-agent hash, TTL'd to the poll's close time) rather than trusting anything from the client.
+- **Voting supports changing your pick, not just a one-shot vote — but it's still strictly one counted vote per person.** A voter is identified by a Redis-stored fingerprint (IP + user-agent hash, TTL'd to the poll's close time). Switching an existing vote to a different option runs as a single atomic Redis Lua script rather than three separate calls (read the old pick, decrement it, increment the new one, store the new pick) — doing it as separate calls would leave a window where two near-simultaneous switches from the same voter could race and desync the tally from what's actually stored as their current pick.
 - **Google sign-in verifies the ID token server-side** via Google's `tokeninfo` endpoint (checking audience + `email_verified`) rather than trusting whatever the frontend claims — and links to an existing email/password account by email if one already exists, rather than creating a duplicate.
 - **CORS is origin-allowlist based** (`ALLOWED_ORIGINS`), not wildcarded — deliberate tradeoff of a bit of deploy-config friction (see the note above about preview URLs) for not leaving the API open to arbitrary origins.
+- **Theme is a single source of truth, not per-page CSS.** All color values are CSS variables declared once (`:root` / `:root[data-theme="light"]`), read by every page and component — avoids the class of bug where one page's palette silently diverges from another's after an edit.
+
+## Not yet shipped
+
+- Email verification on signup (planned: unverified account created at signup, verification link emailed via SMTP, login blocked until verified).
+
+## AI tools used
+
+*(Fill this in honestly for your submission video and this section — which
+tools you used, and specifically how they helped or got in the way. Being
+specific is part of what's being evaluated, not just naming a tool.)*
