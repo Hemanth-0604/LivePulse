@@ -88,6 +88,8 @@ export default function AuthPage() {
               minLength={6}
               required
               autoComplete={mode === "login" ? "current-password" : "new-password"}
+              data-lpignore="true"
+              data-1p-ignore="true"
             />
             <button
               type="button"
