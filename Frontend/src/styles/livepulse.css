@@ -174,7 +174,7 @@
 .lp-input { flex:1; background:var(--panel); border:1px solid var(--edge);
   color:var(--ink); border-radius:8px; padding:13px 16px; font-size:16px;
   font-family:'Barlow Condensed',sans-serif; letter-spacing:.06em;
-  text-transform:lowercase; }
+  text-transform:lowercase; box-sizing:border-box; }
 .lp-input:focus { outline:2px solid var(--run); outline-offset:1px; }
 .lp-btn { background:var(--run); color:#fff; border:none; border-radius:8px;
   padding:0 22px; font-size:14px; font-weight:600; cursor:pointer;
